@@ -17,6 +17,40 @@ do_header() {
 
 static
 int
+read_pipe(FILE * p) {
+	char * line = NULL;
+	size_t cap = 0;
+	ssize_t len;
+
+	while ((len = getline(&line, &cap, p)) > 0) {
+		fputs(line, stdout);
+	}
+
+	free(line);
+	return 0;
+}
+
+static
+int
+read_pipe_fd(const int fd) {
+	FILE * p;
+	int ret;
+
+	p = fdopen(fd, "r");
+	if (p == NULL) {
+		perror("fdopen");
+		return -1;
+	}
+
+	ret = read_pipe(p);
+
+	fclose(p);
+
+	return ret;
+}
+
+static
+int
 run_cmd(char * const argv[]) {
 	int pfd[2];
 
@@ -46,19 +80,8 @@ run_cmd(char * const argv[]) {
 	/* parent continues here */
 
 	close(pfd[1]);
-	FILE * p = fdopen(pfd[0], "r");
-	if (p == NULL) {
-		perror("fdopen");
-		exit(1);
-	}
 
-	for (int i = 0 ; i < 200; i++) {
-		wint_t c = fgetwc(p);
-		//addnwstr((wchar_t *)&c, 1);
-	}
-	fclose(p);
-
-	return 0;
+	return read_pipe_fd(pfd[0]);
 }
 
 int
