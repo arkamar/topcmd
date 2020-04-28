@@ -20,18 +20,65 @@ do_header() {
 }
 
 static
-int
-read_pipe(FILE * p) {
-	char * line = NULL;
-	size_t cap = 0;
-	ssize_t len;
+void
+process_ansi(FILE * p) {
+	char c = getc(p);
 
-	while ((len = getline(&line, &cap, p)) > 0) {
-		fputs(line, stdout);
+	if (c != '[') {
+		ungetc(c, p);
+		return;
 	}
 
-	free(line);
+	fputc(c, stdout);
 
+	for (;;) {
+		c = getc(p);
+		fputc(c, stdout);
+		if (c == 'm') {
+			break;
+		}
+	}
+}
+
+static
+int
+read_pipe(FILE * p) {
+	int x, y;
+
+	const int col = ws.ws_col;
+	const int row = ws.ws_row;
+
+	fputs("\033[3H", stdout); /* set cursor to 2,0 position */
+
+	for (x = 0, y = 2; x < col && y < row;) {
+		int c = fgetc(p);
+		switch (c) {
+		case '\033':
+			fputc(c, stdout);
+			process_ansi(p);
+			break;
+		case '\n':
+			fputs("\033[E", stdout);
+			y++;
+			x = 0;
+			break;
+		case EOF:
+			goto exit;
+		default:
+			fputc(c, stdout);
+			x++;
+			break;
+		}
+
+		if (x == col) {
+			fputs("\033[E", stdout);
+			y++;
+			x = 0;
+		}
+	}
+
+exit:
+	fputs("\033[0m", stdout);
 	fflush(stdout);
 
 	return 0;
