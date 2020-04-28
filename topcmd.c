@@ -27,6 +27,9 @@ read_pipe(FILE * p) {
 	}
 
 	free(line);
+
+	fflush(stdout);
+
 	return 0;
 }
 
@@ -92,6 +95,8 @@ main(int argc, char * argv[]) {
 		{ STDIN_FILENO, POLLIN, 0 },
 	};
 
+	fputs("\033[2J", stdout); /* clear entire screen */
+
 	for (;;) {
 		char buf[BUFSIZ];
 		ssize_t len;
@@ -112,6 +117,9 @@ main(int argc, char * argv[]) {
 			} else if (len == 0) {
 				break;
 			}
+
+			fputs("\033[2J", stdout); /* clear entire screen */
+			fputs("\033[H", stdout); /* set cursor to 0,0 position */
 
 			do_header();
 			if (run_cmd(argv)) {
