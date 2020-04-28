@@ -1,6 +1,8 @@
 #include <sys/ioctl.h>
+#include <sys/signalfd.h>
 
 #include <poll.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -140,6 +142,30 @@ run_cmd(char * const argv[]) {
 
 static
 int
+prepare_signal_fd() {
+	sigset_t mask;
+	int fd, ret;
+
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGWINCH);
+
+	ret = sigprocmask(SIG_BLOCK, &mask, NULL);
+	if (ret == -1) {
+		perror("sigprocmask");
+		return -1;
+	}
+
+	fd = signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC);
+	if (ret == -1) {
+		perror("signalfd");
+		return -1;
+	}
+
+	return fd;
+}
+
+static
+int
 dump(const int fd) {
 	char buf[BUFSIZ];
 	ssize_t len;
@@ -165,6 +191,7 @@ doit(const int fd, char * argv[]) {
 int
 main(int argc, char * argv[]) {
 	const char * argv0 = *argv; argv++; argc--;
+	int sfd;
 
 	/* get window size of the terminal */
 	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
@@ -172,16 +199,19 @@ main(int argc, char * argv[]) {
 		return 1;
 	}
 
+	sfd = prepare_signal_fd();
+
+	enum { POLL_STDIN, POLL_SIGNAL };
 	struct pollfd pfd[] = {
 		{ STDIN_FILENO, POLLIN, 0 },
+		{ sfd, POLLIN, 0 },
 	};
 
 	setvbuf(stdout, NULL, _IOFBF, BUFSIZ);
 
 	fputs("\033[2J", stdout); /* clear entire screen */
 
-	for (;;) {
-		int ret;
+	for (int ret = 0; !ret;) {
 
 		ret = poll(pfd, LEN(pfd), -1);
 
@@ -190,11 +220,20 @@ main(int argc, char * argv[]) {
 			break;
 		}
 
-		if (pfd[0].revents & POLLIN) {
-			ret = doit(pfd[0].fd, argv);
+		if (pfd[POLL_SIGNAL].revents & POLLIN) {
+			/* get window size of the terminal */
+			if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
+				perror("ioctl");
+				return 1;
+			}
+
+			ret = doit(pfd[POLL_SIGNAL].fd, argv);
+		}
+		if (pfd[POLL_STDIN].revents & POLLIN) {
+			ret = doit(pfd[POLL_STDIN].fd, argv);
 		}
 
-		if (pfd[0].revents & POLLHUP) {
+		if (pfd[POLL_STDIN].revents & POLLHUP || pfd[POLL_SIGNAL].revents & POLLHUP) {
 			break;
 		}
 
