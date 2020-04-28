@@ -81,7 +81,6 @@ read_pipe(FILE * p) {
 
 exit:
 	fputs("\033[0m", stdout);
-	fflush(stdout);
 
 	return 0;
 }
@@ -177,15 +176,33 @@ dump(const int fd) {
 }
 
 static
+long
+timespec_to_ms(const struct timespec * ts) {
+	return ts->tv_sec * 1000 + ts->tv_nsec / 1000000;
+}
+
+static
 int
 doit(const int fd, char * argv[]) {
+	struct timespec ts, te;
+	int ret;
+
 	dump(fd);
 
 	fputs("\033[2J", stdout); /* clear entire screen */
 	fputs("\033[H", stdout); /* set cursor to 0,0 position */
 
 	do_header();
-	return run_cmd(argv);
+
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ret = run_cmd(argv);
+	clock_gettime(CLOCK_REALTIME, &te);
+
+	fprintf(stdout, "\033[1;30H%ldms", timespec_to_ms(&te) - timespec_to_ms(&ts));
+
+	fflush(stdout);
+
+	return ret;
 }
 
 int
