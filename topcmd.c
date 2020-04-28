@@ -105,6 +105,8 @@ main(int argc, char * argv[]) {
 		{ STDIN_FILENO, POLLIN, 0 },
 	};
 
+	setvbuf(stdout, NULL, _IOFBF, BUFSIZ);
+
 	fputs("\033[2J", stdout); /* clear entire screen */
 
 	for (;;) {
