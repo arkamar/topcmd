@@ -1,3 +1,5 @@
+#include <sys/ioctl.h>
+
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,6 +8,8 @@
 #include <wchar.h>
 
 #define LEN(x) ( sizeof x / sizeof * x )
+
+struct winsize ws;
 
 static
 void
@@ -90,6 +94,12 @@ run_cmd(char * const argv[]) {
 int
 main(int argc, char * argv[]) {
 	const char * argv0 = *argv; argv++; argc--;
+
+	/* get window size of the terminal */
+	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
+		perror("ioctl");
+		return 1;
+	}
 
 	struct pollfd pfd[] = {
 		{ STDIN_FILENO, POLLIN, 0 },
