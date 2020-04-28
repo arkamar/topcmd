@@ -138,6 +138,30 @@ run_cmd(char * const argv[]) {
 	return read_pipe_fd(pfd[0]);
 }
 
+static
+int
+dump(const int fd) {
+	char buf[BUFSIZ];
+	ssize_t len;
+	len = read(fd, buf, sizeof buf);
+	if (len == -1) {
+		perror("read");
+	}
+	return len;
+}
+
+static
+int
+doit(const int fd, char * argv[]) {
+	dump(fd);
+
+	fputs("\033[2J", stdout); /* clear entire screen */
+	fputs("\033[H", stdout); /* set cursor to 0,0 position */
+
+	do_header();
+	return run_cmd(argv);
+}
+
 int
 main(int argc, char * argv[]) {
 	const char * argv0 = *argv; argv++; argc--;
@@ -157,8 +181,6 @@ main(int argc, char * argv[]) {
 	fputs("\033[2J", stdout); /* clear entire screen */
 
 	for (;;) {
-		char buf[BUFSIZ];
-		ssize_t len;
 		int ret;
 
 		ret = poll(pfd, LEN(pfd), -1);
@@ -169,22 +191,7 @@ main(int argc, char * argv[]) {
 		}
 
 		if (pfd[0].revents & POLLIN) {
-			len = read(STDIN_FILENO, buf, sizeof buf);
-			if (len == -1) {
-				perror("read");
-				break;
-			} else if (len == 0) {
-				break;
-			}
-
-			fputs("\033[2J", stdout); /* clear entire screen */
-			fputs("\033[H", stdout); /* set cursor to 0,0 position */
-
-			do_header();
-			if (run_cmd(argv)) {
-				break;
-			}
-
+			ret = doit(pfd[0].fd, argv);
 		}
 
 		if (pfd[0].revents & POLLHUP) {
