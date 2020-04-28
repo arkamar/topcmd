@@ -207,8 +207,11 @@ doit(const int fd, char * argv[]) {
 
 int
 main(int argc, char * argv[]) {
-	const char * argv0 = *argv; argv++; argc--;
+	const char * argv0;
 	int sfd;
+
+	argv0 = *argv; argv++; argc--;
+	(void)argv0;
 
 	/* get window size of the terminal */
 	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
