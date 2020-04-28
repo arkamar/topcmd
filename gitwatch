@@ -1,0 +1,10 @@
+#! /bin/sh
+
+GIT_DIR=$(git rev-parse --git-dir)
+
+while :
+do
+	find "${GIT_DIR}/refs" "${GIT_DIR}/HEAD" -type f \
+	| entr -d echo
+done \
+| topcmd git "${@}"
