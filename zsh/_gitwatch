@@ -1,0 +1,3 @@
+#compdef gitwatch
+
+_dispatch git git
