@@ -1,6 +1,7 @@
 #include <sys/ioctl.h>
 #include <sys/signalfd.h>
 
+#include <locale.h>
 #include <poll.h>
 #include <signal.h>
 #include <stdio.h>
@@ -52,30 +53,29 @@ read_pipe(FILE * p) {
 
 	fputs("\033[3H", stdout); /* set cursor to 2,0 position */
 
-	for (x = 0, y = 2; x < col && y < row;) {
-		int c = fgetc(p);
+	for (x = 0, y = 2; x <= col && y < row;) {
+		int c = fgetwc(p);
 		switch (c) {
-		case '\033':
-			fputc(c, stdout);
+		case L'\033':
+			fputwc(c, stdout);
 			process_ansi(p);
 			break;
-		case '\n':
+		case L'\n':
 			fputs("\033[E", stdout);
 			y++;
 			x = 0;
 			break;
-		case EOF:
+		case WEOF:
 			goto exit;
 		default:
-			fputc(c, stdout);
-			x++;
+			x += wcwidth(c);
+			if (x > col) {
+				fputs("\033[E", stdout);
+				y++;
+				x = 0;
+			}
+			fputwc(c, stdout);
 			break;
-		}
-
-		if (x == col) {
-			fputs("\033[E", stdout);
-			y++;
-			x = 0;
 		}
 	}
 
@@ -212,6 +212,8 @@ main(int argc, char * argv[]) {
 
 	argv0 = *argv; argv++; argc--;
 	(void)argv0;
+
+	setlocale(LC_CTYPE, "");
 
 	/* get window size of the terminal */
 	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
