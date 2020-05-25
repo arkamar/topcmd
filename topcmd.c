@@ -66,6 +66,9 @@ read_pipe(FILE * p) {
 			x = 0;
 			break;
 		case WEOF:
+			if (ferror(p)) {
+				perror("fgetwc");
+			}
 			goto exit;
 		default:
 			x += wcwidth(c);
