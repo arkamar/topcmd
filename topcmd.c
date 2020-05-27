@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <sys/ioctl.h>
 #include <sys/signalfd.h>
 
