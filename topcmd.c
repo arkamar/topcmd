@@ -19,25 +19,25 @@ void
 do_header() {
 	time_t t = time(NULL);
 	char * ts = ctime(&t);
-	puts(ts);
+	fwprintf(stdout, L"%s", ts);
 }
 
 static
 void
 process_ansi(FILE * p) {
-	char c = getc(p);
+	wint_t c = fgetwc(p);
 
-	if (c != '[') {
-		ungetc(c, p);
+	if (c != L'[') {
+		ungetwc(c, p);
 		return;
 	}
 
-	fputc(c, stdout);
+	fputwc(c, stdout);
 
 	for (;;) {
-		c = getc(p);
-		fputc(c, stdout);
-		if (c == 'm') {
+		c = fgetwc(p);
+		fputwc(c, stdout);
+		if (c == L'm') {
 			break;
 		}
 	}
@@ -51,7 +51,7 @@ read_pipe(FILE * p) {
 	const int col = ws.ws_col;
 	const int row = ws.ws_row;
 
-	fputs("\033[3H", stdout); /* set cursor to 2,0 position */
+	fputws(L"\033[3H", stdout); /* set cursor to 2,0 position */
 
 	for (x = 0, y = 2; x <= col && y < row;) {
 		int c = fgetwc(p);
@@ -61,7 +61,7 @@ read_pipe(FILE * p) {
 			process_ansi(p);
 			break;
 		case L'\n':
-			fputs("\033[E", stdout);
+			fputws(L"\033[E", stdout);
 			y++;
 			x = 0;
 			break;
@@ -73,7 +73,7 @@ read_pipe(FILE * p) {
 		default:
 			x += wcwidth(c);
 			if (x > col) {
-				fputs("\033[E", stdout);
+				fputws(L"\033[E", stdout);
 				y++;
 				x = 0;
 			}
@@ -83,7 +83,7 @@ read_pipe(FILE * p) {
 	}
 
 exit:
-	fputs("\033[0m", stdout);
+	fputws(L"\033[0m", stdout);
 
 	return 0;
 }
@@ -192,8 +192,8 @@ doit(const int fd, char * argv[]) {
 
 	dump(fd);
 
-	fputs("\033[2J", stdout); /* clear entire screen */
-	fputs("\033[H", stdout); /* set cursor to 0,0 position */
+	fputws(L"\033[2J", stdout); /* clear entire screen */
+	fputws(L"\033[H", stdout); /* set cursor to 0,0 position */
 
 	do_header();
 
@@ -201,7 +201,7 @@ doit(const int fd, char * argv[]) {
 	ret = run_cmd(argv);
 	clock_gettime(CLOCK_REALTIME, &te);
 
-	fprintf(stdout, "\033[1;30H%ldms", timespec_to_ms(&te) - timespec_to_ms(&ts));
+	fwprintf(stdout, L"\033[1;30H%ldms", timespec_to_ms(&te) - timespec_to_ms(&ts));
 
 	fflush(stdout);
 
@@ -217,6 +217,9 @@ main(int argc, char * argv[]) {
 	(void)argv0;
 
 	setlocale(LC_CTYPE, "");
+
+	/* set stdout to wide-character mode */
+	fwide(stdout, 1);
 
 	/* get window size of the terminal */
 	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
@@ -234,7 +237,7 @@ main(int argc, char * argv[]) {
 
 	setvbuf(stdout, NULL, _IOFBF, BUFSIZ);
 
-	fputs("\033[2J", stdout); /* clear entire screen */
+	fputws(L"\033[2J", stdout); /* clear entire screen */
 
 	for (int ret = 0; !ret;) {
 
