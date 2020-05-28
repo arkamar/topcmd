@@ -193,6 +193,9 @@ doit(const int fd, char * argv[]) {
 
 	dump(fd);
 
+	fputws(L"\033[1;30H***\033[K", stdout);
+	fflush(stdout);
+
 	fputws(L"\033[2J", stdout); /* clear entire screen */
 	fputws(L"\033[H", stdout); /* set cursor to 0,0 position */
 
