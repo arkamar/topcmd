@@ -2,6 +2,7 @@
 #include <sys/ioctl.h>
 #include <sys/signalfd.h>
 
+#include <errno.h>
 #include <locale.h>
 #include <poll.h>
 #include <signal.h>
@@ -255,6 +256,10 @@ main(int argc, char * argv[]) {
 		ret = poll(pfd, LEN(pfd), -1);
 
 		if (ret == -1) {
+			if (errno == EINTR) {
+				ret = 0;
+				continue;
+			}
 			perror("poll");
 			break;
 		}
