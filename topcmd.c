@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <wait.h>
 #include <wchar.h>
 
 #define LEN(x) ( sizeof x / sizeof * x )
@@ -144,11 +145,20 @@ run_cmd(char * const argv[]) {
 }
 
 static
+void
+sigchld(int unused) {
+	int stat;
+	int pid;
+	while ((pid = waitpid(-1, &stat, WNOHANG)) > 0);
+}
+
+static
 int
 prepare_signal_fd() {
 	sigset_t mask;
 	int fd, ret;
 
+	signal(SIGCHLD, sigchld);
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGWINCH);
 
