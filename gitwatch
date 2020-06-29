@@ -4,7 +4,7 @@ GIT_DIR=$(git rev-parse --git-dir)
 
 while :
 do
-	find "${GIT_DIR}/refs" "${GIT_DIR}/HEAD" -type f \
+	find "${GIT_DIR}/refs" "${GIT_DIR}/packed-refs" "${GIT_DIR}/HEAD" -type f \
 	| entr -d echo
 	if test ${?} -eq 0
 	then
