@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include <sys/ioctl.h>
 #include <sys/signalfd.h>
+#include <sys/wait.h>
 
 #include <errno.h>
 #include <locale.h>
@@ -10,7 +11,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#include <wait.h>
 #include <wchar.h>
 
 #define LEN(x) ( sizeof x / sizeof * x )
