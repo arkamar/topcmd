@@ -74,6 +74,9 @@ read_pipe(FILE * p) {
 		case L'\n':
 			y++;
 			x = 0;
+			if (y >= row) {
+				continue;
+			}
 			cursor_next_line(stdout);
 			break;
 		case WEOF:
@@ -86,6 +89,9 @@ read_pipe(FILE * p) {
 			if (x > col) {
 				y++;
 				x = 0;
+				if (y >= row) {
+					continue;
+				}
 				cursor_next_line(stdout);
 			}
 			fputwc(c, stdout);
