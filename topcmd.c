@@ -47,6 +47,14 @@ process_ansi(FILE * p) {
 }
 
 static
+void
+cursor_next_line(FILE * stream) {
+	/* CSI n E  CNL   Cursor Next Line
+	 * Moves cursor to beginning of the line n (default 1) lines down.  */
+	fputws(L"\033[E", stream);
+}
+
+static
 int
 read_pipe(FILE * p) {
 	int x, y;
@@ -64,9 +72,9 @@ read_pipe(FILE * p) {
 			process_ansi(p);
 			break;
 		case L'\n':
-			fputws(L"\033[E", stdout);
 			y++;
 			x = 0;
+			cursor_next_line(stdout);
 			break;
 		case WEOF:
 			if (ferror(p)) {
@@ -76,9 +84,9 @@ read_pipe(FILE * p) {
 		default:
 			x += wcwidth(c);
 			if (x > col) {
-				fputws(L"\033[E", stdout);
 				y++;
 				x = 0;
+				cursor_next_line(stdout);
 			}
 			fputwc(c, stdout);
 			break;
