@@ -57,7 +57,7 @@ cursor_next_line(FILE * stream) {
 static
 int
 read_pipe(FILE * p) {
-	int x, y;
+	int x, y, w;
 
 	const int col = ws.ws_col;
 	const int row = ws.ws_row;
@@ -85,10 +85,11 @@ read_pipe(FILE * p) {
 			}
 			goto exit;
 		default:
-			x += wcwidth(c);
+			w = wcwidth(c);
+			x += w;
 			if (x > col) {
 				y++;
-				x = 0;
+				x = w;
 				if (y >= row) {
 					continue;
 				}
