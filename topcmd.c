@@ -14,6 +14,7 @@
 #include <wchar.h>
 
 #define LEN(x) ( sizeof x / sizeof * x )
+#define TAB_WIDTH 8
 
 struct winsize ws;
 
@@ -78,6 +79,18 @@ read_pipe(FILE * p) {
 				continue;
 			}
 			cursor_next_line(stdout);
+			break;
+		case L'\t':
+			x += TAB_WIDTH - (x % TAB_WIDTH);
+			if (x > col) {
+				y++;
+				x = TAB_WIDTH;
+				if (y >= row) {
+					continue;
+				}
+				cursor_next_line(stdout);
+			}
+			fputwc(c, stdout);
 			break;
 		case WEOF:
 			if (ferror(p)) {
