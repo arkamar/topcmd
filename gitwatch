@@ -1,10 +1,11 @@
 #! /bin/sh
 
-GIT_DIR=$(git rev-parse --git-dir)
+GIT_DIR=$(git rev-parse --git-common-dir)
 
 while :
 do
-	find "${GIT_DIR}/refs" "${GIT_DIR}/packed-refs" "${GIT_DIR}/HEAD" -type f \
+	find "${GIT_DIR}/refs" "${GIT_DIR}/packed-refs" "${GIT_DIR}/HEAD" "${GIT_DIR}/worktrees" -type f \
+	| grep -e refs -e '\<HEAD\>' \
 	| entr -d echo
 	if test ${?} -eq 0
 	then
